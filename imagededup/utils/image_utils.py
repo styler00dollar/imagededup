@@ -3,11 +3,11 @@ from typing import List, Union, Tuple
 
 import numpy as np
 from PIL import Image
-
+import pillow_avif
 from imagededup.utils.logger import return_logger
 
 
-IMG_FORMATS = ['JPEG', 'PNG', 'BMP', 'MPO', 'PPM', 'TIFF', 'GIF']
+IMG_FORMATS = ['JPEG', 'PNG', 'BMP', 'MPO', 'PPM', 'TIFF', 'GIF', 'AVIF', 'JPG']
 logger = return_logger(__name__)
 
 
