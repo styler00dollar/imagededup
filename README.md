@@ -13,6 +13,34 @@ imagededup is a python package that simplifies the task of finding **exact** and
   <img src="readme_figures/mona_lisa.png" width="600" />
 </p>
 
+This fork does add `.avif` support. (Does need `pip install pillow_avif_plugin`.)
+
+Minimalistic example to remove all files from a directory:
+```
+from imagededup.methods import PHash, AHash, DHash, WHash, CNN
+import os
+from tqdm import tqdm
+
+# phasher = PHash()
+# phasher = AHash()
+# phasher = DHash()
+# phasher = WHash()
+phasher = CNN()
+
+image_dir = '/content/data/'
+
+# Generate encodings for all images in an image directory
+encodings = phasher.encode_images(image_dir=image_dir)
+
+# Find duplicates using the generated encodings
+duplicates = phasher.find_duplicates_to_remove(encoding_map=encodings)
+
+for f in tqdm(duplicates):
+  os.remove(os.path.join(image_dir, f))
+```
+
+-------------------
+
 This package provides functionality to make use of hashing algorithms that are particularly good at finding exact
 duplicates as well as convolutional neural networks which are also adept at finding near duplicates. An evaluation
 framework is also provided to judge the quality of deduplication for a given dataset.
