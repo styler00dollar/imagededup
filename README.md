@@ -15,8 +15,13 @@ imagededup is a python package that simplifies the task of finding **exact** and
 
 This fork does add `.avif` support. (Does need `pip install pillow_avif_plugin`.)
 
-Minimalistic example to remove all files from a directory:
+You can install it with:
 ```
+pip install git+https://github.com/styler00dollar/imagededup.git
+```
+
+Minimalistic example to remove all files from a directory:
+```python
 from imagededup.methods import PHash, AHash, DHash, WHash, CNN
 import os
 from tqdm import tqdm
