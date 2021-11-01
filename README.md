@@ -43,6 +43,60 @@ duplicates = phasher.find_duplicates_to_remove(encoding_map=encodings)
 for f in tqdm(duplicates):
   os.remove(os.path.join(image_dir, f))
 ```
+For big folders it is recommended to use this code:
+```python
+# https://github.com/idealo/imagededup/issues/133
+from imagededup.utils.general_utils import get_files_to_remove
+from imagededup.methods import CNN
+cnn = CNN()
+encodings = cnn.encode_images('/content/data2')  # In your case, this should be a dictionary with 127K entries (if there are no corrupt images or images with unsupported format)
+
+# Large scale similarity search
+import nmslib
+import numpy as np
+
+data = np.array(list(encodings.values()))
+
+index = nmslib.init(method='hnsw', space='cosinesimil')
+index.addDataPointBatch(data)
+
+# Set index parameters
+M = 40  #  Max links per node
+efConstruction = 40 # Size of the dynamic list used during construction. A larger value means a better quality index, but increases build time. Should be an integer value between 1 and the size of the dataset.
+
+num_threads = 4
+index_time_params = {'M': M, 'indexThreadQty': num_threads, 'efConstruction': efConstruction, 'post' : 0} # 'post': postprocessing
+index.createIndex(index_time_params, print_progress=True)
+
+K = data.shape[0] # number of neigbours (setting to the size of dataset, usual practice is to specify a value such as 100 or so)
+efSearch = 50 # Size of the dynamic list used during search. Higher values lead to improved recall at the expense of longer search time. Can take values between k and the size of the dataset and may be greater or smaller than ef_construction. Typical values are 100 - 2000.
+query_time_params = {'efSearch': efSearch}
+print('Setting query-time parameters', query_time_params)
+index.setQueryTimeParams(query_time_params)
+neighbours = index.knnQueryBatch(data, k=K)
+
+def retrieve_neighbours_one_file(neighbours_onefile, onefile_matrix_row_index, sim_thresh, all_filenames):
+    # gets duplicates for one file
+    self_retrived_file_pos = np.where(neighbours_onefile[0] == onefile_matrix_row_index) # Avoid self retrieval
+    neighbours_onefile_files = np.delete(neighbours_onefile[0], self_retrived_file_pos)
+    neighbours_onefile_sims = np.delete(neighbours_onefile[1], self_retrived_file_pos)
+    
+    sim_neighbors = 1 - neighbours_onefile_sims  # convert distance to similarity
+    thresh_sims = sim_neighbors[np.where(sim_neighbors >= sim_thresh)]
+    thresh_neighbours = neighbours_onefile_files[np.where(sim_neighbors >= sim_thresh)]
+    thresh_neighbours_filenames = [all_filenames[i] for i in thresh_neighbours]
+    dups = list(zip(thresh_neighbours_filenames, thresh_sims))
+    return dups
+
+filenames = list(encodings.keys())
+file_matrix_inds = range(data.shape[0])
+min_sim_threshold = 0.9
+res = list(map(retrieve_neighbours_one_file, neighbours, file_matrix_inds, [min_sim_threshold] * data.shape[0], [filenames] * data.shape[0]))
+duplicates = dict(zip(filenames, res))
+
+for f in tqdm(duplicates):
+  os.remove(os.path.join(image_dir, f))
+```
 
 -------------------
 
