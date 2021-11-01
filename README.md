@@ -48,8 +48,11 @@ For big folders it is recommended to use this code:
 # https://github.com/idealo/imagededup/issues/133
 from imagededup.utils.general_utils import get_files_to_remove
 from imagededup.methods import CNN
+from tqdm import tqdm
+import os
 cnn = CNN()
-encodings = cnn.encode_images('/content/data2')  # In your case, this should be a dictionary with 127K entries (if there are no corrupt images or images with unsupported format)
+image_dir = '/content/data2'
+encodings = cnn.encode_images(image_dir)  # In your case, this should be a dictionary with 127K entries (if there are no corrupt images or images with unsupported format)
 
 # Large scale similarity search
 import nmslib
@@ -94,7 +97,7 @@ min_sim_threshold = 0.9
 res = list(map(retrieve_neighbours_one_file, neighbours, file_matrix_inds, [min_sim_threshold] * data.shape[0], [filenames] * data.shape[0]))
 duplicates = dict(zip(filenames, res))
 
-for f in tqdm(duplicates):
+for f in tqdm(get_files_to_remove(duplicates)):
   os.remove(os.path.join(image_dir, f))
 ```
 
